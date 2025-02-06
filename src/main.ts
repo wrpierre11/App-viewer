@@ -2,11 +2,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import Stats from "stats.js";
-//import * as BUI from "@thatopen/ui";
-//import { GUI } from "dat.gui";
 import { IfcLoaderModule } from "./IFCLoader";
-//import * as BUI from "@thatopen/ui";
-//import * as WEBIFC from "web-ifc";
 
 // Get the container element
 const container = document.getElementById("container");
@@ -38,7 +34,10 @@ components.init();
 world.camera.projection.set("Orthographic");
 world.camera.set("Plan");
 world.camera.controls.setLookAt(0, 1, 0, 0, 0, 0);
-world.camera.three.position.y = 10;
+
+// Fit the camera to the box
+const box = new THREE.Box3(new THREE.Vector3(-20, -20, -20), new THREE.Vector3(20, 20, 20));
+world.camera.controls.fitToBox(box, false);
 
 
 // Set the camera limits
@@ -66,11 +65,12 @@ ifcLoaderModule.setupFileInput();
 // Highlighter
 const highlighter = components.get(OBCF.Highlighter);
 highlighter.setup({ world });
-highlighter.zoomToSelection = true;
+highlighter.zoomToSelection = false;
 
-//BUI
-//const panel = new BUI.Panel();
-//document.body.append(panel);
+//Access properties
+//const propertiesManager = components.get("ifc.properties");
+
+//const elemements = mod
 
 //Stats
 const stats = new Stats();
