@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
+//import * as BUI from "@thatopen/ui";
+//import * as WEBIFC from "web-ifc";
 import Stats from "stats.js";
 import { IfcLoaderModule } from "./IFCLoader";
 
@@ -39,8 +41,7 @@ world.camera.controls.setLookAt(0, 1, 0, 0, 0, 0);
 const box = new THREE.Box3(new THREE.Vector3(-20, -20, -20), new THREE.Vector3(20, 20, 20));
 world.camera.controls.fitToBox(box, false);
 
-
-// Set the camera limits
+// Set the position of the camera
 const position = new THREE.Vector3();
 world.camera.controls.getPosition(position);
 console.log(position);
@@ -60,17 +61,10 @@ world.scene.three.add(axes);
 // Load a model
 const ifcLoaderModule = new IfcLoaderModule(components, world);
 await ifcLoaderModule.initialize();
-ifcLoaderModule.setupFileInput();
 
 // Highlighter
 const highlighter = components.get(OBCF.Highlighter);
 highlighter.setup({ world });
-highlighter.zoomToSelection = false;
-
-//Access properties
-//const propertiesManager = components.get("ifc.properties");
-
-//const elemements = mod
 
 //Stats
 const stats = new Stats();
@@ -80,3 +74,14 @@ stats.dom.style.left = "0px";
 stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
+
+// Classifier
+const classifier = components.get(OBC.Classifier);
+ifcLoaderModule.setupFileInput((loadedModel) => {
+  classifier.byEntity(loadedModel);
+
+  const walls = classifier.find({
+    entities: ["IFCWALLSTANDARDCASE"],
+  });
+  console.log(walls);
+});
