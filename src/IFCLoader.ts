@@ -28,7 +28,7 @@ export class IfcLoaderModule {
     this.world.scene.three.add(model);
   }
 
-  setupFileInput() {
+  setupFileInput(p0: (loadedModel: any) => void) {
     // Create a hidden file input element
     const fileInput = document.createElement("input");
     fileInput.type = "file";
