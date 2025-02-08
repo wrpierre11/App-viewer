@@ -1,21 +1,17 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
-//import * as BUI from "@thatopen/ui";
-//import * as WEBIFC from "web-ifc";
-import Stats from "stats.js";
 import { IfcLoaderModule } from "./IFCLoader";
+import { StatsModule } from "./StatsModule";
 
-// Get the container element
 const container = document.getElementById("container");
 if (!container) {
   throw new Error("Container element not found");
 }
 
-// Initialize components
+// Initialize components and create world
 const components = new OBC.Components();
 
-// Create a new world
 const worlds = components.get(OBC.Worlds);
 
 const world = worlds.create<
@@ -24,12 +20,11 @@ const world = worlds.create<
   OBC.SimpleRenderer
 >();
 
-// Setup the world
+// Setup the world and initialize components
 world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBC.SimpleRenderer(components, container);
 world.camera = new OBC.OrthoPerspectiveCamera(components);
 
-// Initialize components
 components.init();
 
 // Set the camera to orthographic
@@ -41,7 +36,7 @@ world.camera.controls.setLookAt(0, 1, 0, 0, 0, 0);
 const box = new THREE.Box3(new THREE.Vector3(-20, -20, -20), new THREE.Vector3(20, 20, 20));
 world.camera.controls.fitToBox(box, false);
 
-// Set the position of the camera
+// Get the position of the camera
 const position = new THREE.Vector3();
 world.camera.controls.getPosition(position);
 console.log(position);
@@ -50,13 +45,15 @@ console.log(position);
 world.scene.setup();
 world.scene.three.background = new THREE.Color(0x000000);
 
-//Add a grid
+//Add a grid, axes and stats
 const grids = components.get(OBC.Grids);
 grids.create(world);
 
-//Axes
 const axes = new THREE.AxesHelper(5);
 world.scene.three.add(axes);
+
+const statsModule = new StatsModule();
+statsModule.attachToRenderer(world.renderer);
 
 // Load a model
 const ifcLoaderModule = new IfcLoaderModule(components, world);
@@ -65,15 +62,6 @@ await ifcLoaderModule.initialize();
 // Highlighter
 const highlighter = components.get(OBCF.Highlighter);
 highlighter.setup({ world });
-
-//Stats
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.left = "0px";
-stats.dom.style.zIndex = "unset";
-world.renderer.onBeforeUpdate.add(() => stats.begin());
-world.renderer.onAfterUpdate.add(() => stats.end());
 
 // Classifier
 const classifier = components.get(OBC.Classifier);
