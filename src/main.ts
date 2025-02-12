@@ -11,9 +11,7 @@ if (!container) {
 
 // Initialize components and create world
 const components = new OBC.Components();
-
 const worlds = components.get(OBC.Worlds);
-
 const world = worlds.create<
   OBC.SimpleScene,
   OBC.OrthoPerspectiveCamera,
@@ -24,22 +22,15 @@ const world = worlds.create<
 world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBC.SimpleRenderer(components, container);
 world.camera = new OBC.OrthoPerspectiveCamera(components);
-
 components.init();
 
-// Set the camera to orthographic
+// Set the camera to orthographic and Fit the camera to the box
 world.camera.projection.set("Orthographic");
 world.camera.set("Plan");
 world.camera.controls.setLookAt(0, 1, 0, 0, 0, 0);
 
-// Fit the camera to the box
 const box = new THREE.Box3(new THREE.Vector3(-20, -20, -20), new THREE.Vector3(20, 20, 20));
 world.camera.controls.fitToBox(box, false);
-
-// Get the position of the camera
-const position = new THREE.Vector3();
-world.camera.controls.getPosition(position);
-console.log(position);
 
 //Camera, renderer setup and background color
 world.scene.setup();
