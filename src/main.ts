@@ -85,15 +85,10 @@ function setupFileInput() {
   button.addEventListener("click", () => {
     fileInput.click(); // Click on the Simulate Input Element
   });
-
+  
   document.body.appendChild(button);
 }
-
 setupFileInput();
-
-fragments.onFragmentsLoaded.add((model) => {
-  console.log(model);
-});
 
 //Properties
 const [propertiesTable, updatePropertiesTable] = CUI.tables.elementProperties({
@@ -128,31 +123,30 @@ const propertiesPanel = BUI.Component.create(() => {
     button.label = propertiesTable.expanded ? "Collapse" : "Expand";
   };
 
-  const copyAsTSV = async () => {
-    await navigator.clipboard.writeText(propertiesTable.tsv);
-  };
-
-  return BUI.html`
+ return BUI.html`
     <bim-panel label="Properties">
       <bim-panel-section label="Element Data">
         <div style="display: flex; gap: 0.5rem;">
-    
-        <bim-button @click=${expandTable} label=${propertiesTable.expanded ? "Collapse" : "Expand"}></bim-button> 
-        </div> 
+          <bim-button @click=${expandTable} label=${propertiesTable.expanded ? "Collapse" : "Expand"}></bim-button> 
+        </div>
+
         ${propertiesTable}
+
       </bim-panel-section>
     </bim-panel>
   `;
 });
 
+// Create the main app layout
 const app = document.createElement("bim-grid");
 app.layouts = {
   main: {
     template: `
     "propertiesPanel viewport"
+    "button   button"
     /25rem 1fr
     `,
-    elements: { propertiesPanel, container },
+    elements: { propertiesPanel, viewport:container, },
   },
 };
 
