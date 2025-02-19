@@ -4,14 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./src/style.css">
-    <title>ifcts-project</title>
+    <title>App</title>
   </head>
-
   <body>
+    <div class="app">
+      <!-- Properties Panel -->
+      <div class="properties-panel">
+        <bim-panel label="Properties">
+          <bim-panel-section label="Element Data">
+            <div class="button-group">
+              <bim-button id="expand-button">Expand</bim-button>
+            </div>
+            <div id="properties-table"></div>
+          </bim-panel-section>
+        </bim-panel>    
+      </div>
 
-  <div id="container"></div>
- 
-  <script type="module" src="src/main.ts"></script>
+      <!-- 3D View Container -->
+      <div id="container"></div>
 
+      <!-- Load IFC Button -->
+       <div class="button-container">
+        <button id="load-ifc-button">Load IFC</button>
+        <input type="file" id="file-input" accept=".ifc" style="display: none;">
+       </div>
+    </div>
+    
+    <script type="module" src="src/main.ts"></script>
   </body>
 </html>
