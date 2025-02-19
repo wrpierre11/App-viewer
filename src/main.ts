@@ -48,9 +48,7 @@ const statsModule = new StatsModule();
 statsModule.attachToRenderer(world.renderer);
 
 // Load IFC model
-const fragments = components.get(OBC.FragmentsManager);
 const fragmentIfcLoader = components.get(OBC.IfcLoader);
-
 await fragmentIfcLoader.setup();
 
 fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
@@ -65,91 +63,37 @@ async function loadIfcFromFile(file: File) {
   await indexer.process(model);
 }
 
-function setupFileInput() {
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = ".ifc";
-  fileInput.style.display = "none"; // Making invisible
+// Setup file input and button
+const fileInput = document.getElementById("file-input") as HTMLInputElement;
+const loadIfcButton = document.getElementById("load-ifc-button") as HTMLButtonElement;
 
-  fileInput.addEventListener("change", async (event) => {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      await loadIfcFromFile(input.files[0]);
-    }
-  });
+loadIfcButton.addEventListener("click", () => {
+  fileInput.click();
+});
 
-  const button = document.createElement("button");// Create a button to trigger the upload
-  button.textContent = "Load IFC from File";
-  button.style.cursor = "pointer";
-  button.style.margin = "10px";
-  button.addEventListener("click", () => {
-    fileInput.click(); // Click on the Simulate Input Element
-  });
-  
-  document.body.appendChild(button);
-}
-setupFileInput();
+fileInput.addEventListener("change", async (event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    await loadIfcFromFile(input.files[0]);
+  }
+});
 
-//Properties
-const [propertiesTable, updatePropertiesTable] = CUI.tables.elementProperties({
+//Properties table setup
+const propertiesTable = document.getElementById("properties-table");
+const [table, updateTable] = CUI.tables.elementProperties({
   components,
   fragmentIdMap: {},
 });
 
-propertiesTable.preserveStructureOnFilter = true,
-propertiesTable.indentationInText = false;
+propertiesTable?.appendChild(table);
 
 const highlighter = components.get(OBF.Highlighter);
-highlighter.setup({world});
+highlighter.setup({ world });
 
 highlighter.events.select.onHighlight.add((fragmentIdMap) => {
-  updatePropertiesTable({ fragmentIdMap });
+  updateTable({ fragmentIdMap });
 });
 
-highlighter.events.select.onClear.add(() =>
-  updatePropertiesTable({ fragmentIdMap: {}}),
-);
-
-//Table properties
-const propertiesPanel = BUI.Component.create(() => {
-  const onTextInput = (e: Event) => {
-    const input = e.target as BUI.TextInput;
-    propertiesTable.queryString = input.value !== "" ? input.value : null;
-  };
-
-  const expandTable = (e: Event) => {
-    const button = e.target as BUI.Button;
-    propertiesTable.expanded = !propertiesTable.expanded;
-    button.label = propertiesTable.expanded ? "Collapse" : "Expand";
-  };
-
- return BUI.html`
-    <bim-panel label="Properties">
-      <bim-panel-section label="Element Data">
-        <div style="display: flex; gap: 0.5rem;">
-          <bim-button @click=${expandTable} label=${propertiesTable.expanded ? "Collapse" : "Expand"}></bim-button> 
-        </div>
-
-        ${propertiesTable}
-
-      </bim-panel-section>
-    </bim-panel>
-  `;
+highlighter.events.select.onClear.add(() => {
+  updateTable({ fragmentIdMap: {} });
 });
-
-// Create the main app layout
-const app = document.createElement("bim-grid");
-app.layouts = {
-  main: {
-    template: `
-    "propertiesPanel viewport"
-    "button   button"
-    /25rem 1fr
-    `,
-    elements: { propertiesPanel, viewport:container, },
-  },
-};
-
-app.layout = "main";
-
-document.body.append(app);
