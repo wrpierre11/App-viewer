@@ -8,7 +8,8 @@ export class StatsModule {
     this.stats = new Stats();
     this.stats.showPanel(2); // Show the FPS panel
     document.body.append(this.stats.dom);
-    this.stats.dom.style.left = "0px";
+    this.stats.dom.style.left = "auto";
+    this.stats.dom.style.right = "0px";
     this.stats.dom.style.zIndex = "unset";
   }
 
