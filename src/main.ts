@@ -32,7 +32,7 @@ world.camera.projection.set("Orthographic");
 world.camera.set("Plan");
 world.camera.controls.setLookAt(0, 1, 0, 0, 0, 0);
 
-const box = new THREE.Box3(new THREE.Vector3(-20, -20, -20), new THREE.Vector3(20, 20, 20));
+const box = new THREE.Box3(new THREE.Vector3(-15, -15, -15), new THREE.Vector3(15, 15, 15));
 world.camera.controls.fitToBox(box, false);
 
 //Camera, renderer setup and background color
@@ -47,7 +47,8 @@ world.scene.three.add(axes);
 const statsModule = new StatsModule();
 statsModule.attachToRenderer(world.renderer);
 
-// Load IFC model
+// Getting IFC model a fragments
+const fragments = components.get(OBC.FragmentsManager);
 const fragmentIfcLoader = components.get(OBC.IfcLoader);
 await fragmentIfcLoader.setup();
 
@@ -59,9 +60,92 @@ async function loadIfcFromFile(file: File) {
   const model = await fragmentIfcLoader.load(buffer);
   model.name = file.name;
   world.scene.three.add(model);
+
+  // Process the model to index relationships
   const indexer = components.get(OBC.IfcRelationsIndexer);
   await indexer.process(model);
-}
+
+  // Access the fragments and properties
+  const group = Array.from(fragments.groups.values())[0];
+  const properties = group.getLocalProperties();
+
+  if (properties) {
+    console.log("Properties of the loaded IFC file", properties)};
+
+  // Use the IfcFinder to query specific elements
+  const finder = components.get(OBC.IfcFinder);
+  const queryGroup = finder.create();
+
+  //Basic query by category
+  const basicQuery = new OBC.IfcBasicQuery(components, {
+    name: "category",
+    inclusive: false,
+    rules: [],
+  });
+
+  queryGroup.add(basicQuery);
+    
+  //Filter walls
+  const categoryRule: OBC.IfcCategoryRule = {
+    type: "category",
+    value: /IfcWallStandardCase/,
+  };
+
+  basicQuery.rules.push(categoryRule);
+
+  const propertyRule: OBC.IfcPropertyRule = {
+    type: "property",
+    name: /.*/,
+    value: /yeso/,
+  };
+
+  const propertyQuery = new OBC.IfcBasicQuery(components, {
+    name: "property",
+    inclusive: false,
+    rules: [propertyRule],
+  });
+
+  queryGroup.add(propertyQuery);
+
+  await queryGroup.update(model.uuid, file);
+  const items = queryGroup.items;
+
+  const hider = components.get(OBC.Hider);
+  hider.set(false);
+  hider.set(true, items);
+
+  // Buttons section to the finder
+  const categoryInput = document.getElementById("category-input") as BUI.TextInput;
+  const propertyInput = document.getElementById("property-input") as BUI.TextInput;
+  const updateFinderButton = document.getElementById("update-finder-button") as BUI.Button;
+  if (!updateFinderButton) {
+    throw new Error("Update Finder Button not found!");
+  }
+
+  const updateFinder = async () => {
+    basicQuery.clear();
+    propertyQuery.clear();
+    categoryRule.value = new RegExp(categoryInput.value);
+    propertyRule.value = new RegExp(propertyInput.value);
+    await queryGroup.update(model.uuid, file);
+    const items = queryGroup.items;
+    console.log(items);
+    if (Object.keys(items).length === 0) {
+      alert("No elements found");
+      return;
+    }
+    hider.set(false);
+    hider.set(true, items);
+  };
+
+  updateFinderButton.addEventListener("click", async () => {
+    await updateFinder();
+  });
+};
+
+fragments.onFragmentsLoaded.add((model) => {
+  console.log(model);
+});
 
 // Setup file input and button
 const fileInput = document.getElementById("file-input") as HTMLInputElement;
