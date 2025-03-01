@@ -28,8 +28,21 @@
         <button id="load-ifc-button">Load IFC</button>
         <input type="file" id="file-input" accept=".ifc" style="display: none;">
        </div>
+
+      <!-- IFC Finder Section -->
+      <div class="finder-panel">
+        <bim-panel active label="IFC Finder Tutorial" class="options-menu">
+          <bim-panel-section collapsed label="Controls">
+            <bim-panel-section class="finder-controls">
+              <bim-text-input id="category-input" label="Category" value="IfcWallStandardCase"></bim-text-input>
+              <bim-text-input id="property-input" label="Property" value="yeso"></bim-text-input>
+              <bim-button id="update-finder-button" label="Update" class="update-button"></bim-button>
+            </bim-panel-section>
+          </bim-panel-section>      
+        </bim-panel>
+      </div>    
     </div>
-    
+
     <script type="module" src="src/main.ts"></script>
   </body>
 </html>
