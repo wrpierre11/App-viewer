@@ -54,6 +54,7 @@ await fragmentIfcLoader.setup();
 
 fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 
+//Load IFC file
 async function loadIfcFromFile(file: File) {
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
@@ -85,62 +86,75 @@ async function loadIfcFromFile(file: File) {
 
   queryGroup.add(basicQuery);
     
-  //Filter walls
-  const categoryRule: OBC.IfcCategoryRule = {
-    type: "category",
-    value: /IfcWallStandardCase/,
-  };
-
-  basicQuery.rules.push(categoryRule);
-
-  const propertyRule: OBC.IfcPropertyRule = {
-    type: "property",
-    name: /.*/,
-    value: /yeso/,
-  };
-
+  // Basic query by property
   const propertyQuery = new OBC.IfcBasicQuery(components, {
     name: "property",
     inclusive: false,
-    rules: [propertyRule],
+    rules: [],
   });
 
   queryGroup.add(propertyQuery);
 
-  await queryGroup.update(model.uuid, file);
-  const items = queryGroup.items;
-
   const hider = components.get(OBC.Hider);
-  hider.set(false);
-  hider.set(true, items);
-
+  
   // Buttons section to the finder
   const categoryInput = document.getElementById("category-input") as BUI.TextInput;
   const propertyInput = document.getElementById("property-input") as BUI.TextInput;
   const updateFinderButton = document.getElementById("update-finder-button") as BUI.Button;
-  if (!updateFinderButton) {
-    throw new Error("Update Finder Button not found!");
+
+  if (!categoryInput || !propertyInput || !updateFinderButton) {
+    throw new Error("Input elements not found");
   }
 
   const updateFinder = async () => {
+    // Clear previous rules
     basicQuery.clear();
     propertyQuery.clear();
-    categoryRule.value = new RegExp(categoryInput.value);
-    propertyRule.value = new RegExp(propertyInput.value);
+
+    // Add new rules only if inputs are not empty
+    if (categoryInput.value) {
+      const categoryRule: OBC.IfcCategoryRule = {
+        type: "category",
+        value: new RegExp(categoryInput.value, "i"),
+      };
+      basicQuery.rules.push(categoryRule);
+      console.log("Category Rule Applied:", categoryRule);
+    }
+
+    if (propertyInput.value) {
+      const propertyRule: OBC.IfcPropertyRule = {
+        type: "property",
+        name: /.*/,
+        value: new RegExp(propertyInput.value, "i"),
+      };
+      propertyQuery.rules.push(propertyRule);
+      console.log("Property Rule Applied:", propertyRule);
+    }
+
+    // Update the query group
     await queryGroup.update(model.uuid, file);
     const items = queryGroup.items;
-    console.log(items);
+    console.log("Query Results:", items);
+
     if (Object.keys(items).length === 0) {
       alert("No elements found");
+      hider.set(false);
       return;
     }
+
+    // Hide all elements and show only the filtered ones
     hider.set(false);
+    console.log("All elements arre visible");
+
     hider.set(true, items);
+    console.log("Filtered elements are visible", items);
   };
 
   updateFinderButton.addEventListener("click", async () => {
     await updateFinder();
   });
+
+  hider.set(true);
 };
 
 fragments.onFragmentsLoaded.add((model) => {
@@ -180,4 +194,40 @@ highlighter.events.select.onHighlight.add((fragmentIdMap) => {
 
 highlighter.events.select.onClear.add(() => {
   updateTable({ fragmentIdMap: {} });
+});
+
+// Reset View Button
+const resetViewButton = document.getElementById("reset-view-button") as HTMLButtonElement;
+
+if (!resetViewButton) {
+  throw new Error("Reset View Button not found!");
+}
+
+resetViewButton.addEventListener("click", () => {
+  // Reset the camera to fit the entire model
+  const box = new THREE.Box3().setFromObject(world.scene.three);
+  console.log("Bounding Box:", box);
+  world.camera.controls.fitToBox(box, true);
+
+  // Reset visibility of all elements (if a hider is being used)
+  const hider = components.get(OBC.Hider);
+  hider.set(false); // Show all elements
+  console.log("All elements are visible.");
+
+  // Clear the category and property input fields
+  const categoryInput = document.getElementById("category-input") as BUI.TextInput;
+  const propertyInput = document.getElementById("property-input") as BUI.TextInput;
+
+  if (categoryInput && propertyInput) {
+    categoryInput.value = "";
+    propertyInput.value = "";
+  }
+
+  // Clear the query rules
+  const finder = components.get(OBC.IfcFinder);
+  const queryGroup = finder.create();
+  queryGroup.clear(); // Clear all query rules
+  console.log("Query rules cleared.");
+
+  console.log("View reset to show the entire model.");
 });
