@@ -7,6 +7,9 @@ import { StatsModule } from "./StatsModule";
 
 BUI.Manager.init();
 
+// -------------------------
+// Initialize App
+// -------------------------
 const container = document.getElementById("container");
 if (!container) {
   throw new Error("Container element not found");
@@ -32,7 +35,7 @@ world.camera.projection.set("Orthographic");
 world.camera.set("Plan");
 world.camera.controls.setLookAt(0, 1, 0, 0, 0, 0);
 
-const box = new THREE.Box3(new THREE.Vector3(-15, -15, -15), new THREE.Vector3(15, 15, 15));
+const box = new THREE.Box3(new THREE.Vector3(-10, -10, -10), new THREE.Vector3(10, 10, 10));
 world.camera.controls.fitToBox(box, false);
 
 //Camera, renderer setup and background color
@@ -54,12 +57,29 @@ await fragmentIfcLoader.setup();
 
 fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 
-//Load IFC file
-async function loadIfcFromFile(file: File) {
-  const data = await file.arrayBuffer();
+// -------------------------
+// Declare Global Variables
+// -------------------------
+let model: OBC.FragmentsGroup | null = null;
+let file: File | null = null;
+
+// Initialize Finder and Hider
+const finder = components.get(OBC.IfcFinder);
+const queryGroup = finder.create();
+const hider = components.get(OBC.Hider);
+
+// -------------------------
+// Functions
+// -------------------------
+
+/**
+ * Loads an IFC file and processes it.
+ */
+async function loadIfcFromFile(selectedFile: File) {
+  const data = await selectedFile.arrayBuffer();
   const buffer = new Uint8Array(data);
-  const model = await fragmentIfcLoader.load(buffer);
-  model.name = file.name;
+  model = await fragmentIfcLoader.load(buffer);
+  model.name = selectedFile.name;
   world.scene.three.add(model);
 
   // Process the model to index relationships
@@ -71,95 +91,121 @@ async function loadIfcFromFile(file: File) {
   const properties = group.getLocalProperties();
 
   if (properties) {
-    console.log("Properties of the loaded IFC file", properties)};
+    console.log("Properties of the loaded IFC file", properties);
+  }
+}
 
-  // Use the IfcFinder to query specific elements
-  const finder = components.get(OBC.IfcFinder);
-  const queryGroup = finder.create();
+/**
+ * Updates the finder based on the current category and property inputs.
+ */
+// Declare a variable to track the current filter step
+let currentStep = 0;
 
-  //Basic query by category
-  const basicQuery = new OBC.IfcBasicQuery(components, {
-    name: "category",
-    inclusive: false,
-    rules: [],
-  });
-
-  queryGroup.add(basicQuery);
-    
-  // Basic query by property
-  const propertyQuery = new OBC.IfcBasicQuery(components, {
-    name: "property",
-    inclusive: false,
-    rules: [],
-  });
-
-  queryGroup.add(propertyQuery);
-
-  const hider = components.get(OBC.Hider);
-  
-  // Buttons section to the finder
-  const categoryInput = document.getElementById("category-input") as BUI.TextInput;
-  const propertyInput = document.getElementById("property-input") as BUI.TextInput;
-  const updateFinderButton = document.getElementById("update-finder-button") as BUI.Button;
-
-  if (!categoryInput || !propertyInput || !updateFinderButton) {
-    throw new Error("Input elements not found");
+async function applyFilterStep() {
+  if (!model || !file) {
+    console.error("No model or file loaded.");
+    return;
   }
 
-  const updateFinder = async () => {
-    // Clear previous rules
-    basicQuery.clear();
-    propertyQuery.clear();
+  // Clear previous rules
+  queryGroup.clear();
 
-    // Add new rules only if inputs are not empty
-    if (categoryInput.value) {
-      const categoryRule: OBC.IfcCategoryRule = {
-        type: "category",
-        value: new RegExp(categoryInput.value, "i"),
-      };
-      basicQuery.rules.push(categoryRule);
-      console.log("Category Rule Applied:", categoryRule);
-    }
+  // Get the category and property inputs for the current step
+  const categoryInput = document.getElementById(`category-input-${currentStep + 1}`) as BUI.TextInput;
+  const propertyInput = document.getElementById(`property-input-${currentStep + 1}`) as BUI.TextInput;
 
-    if (propertyInput.value) {
-      const propertyRule: OBC.IfcPropertyRule = {
-        type: "property",
-        name: /.*/,
-        value: new RegExp(propertyInput.value, "i"),
-      };
-      propertyQuery.rules.push(propertyRule);
-      console.log("Property Rule Applied:", propertyRule);
-    }
+  // Add category rule if category input has a value
+  if (categoryInput.value) {
+    const categoryRule: OBC.IfcCategoryRule = {
+      type: "category",
+      value: new RegExp(categoryInput.value, "i"),
+    };
+    queryGroup.add(new OBC.IfcBasicQuery(components, {
+      name: "category",
+      inclusive: false,
+      rules: [categoryRule],
+    }));
+    console.log(`Category Rule Applied (Step ${currentStep + 1}):`, categoryRule);
+  }
 
-    // Update the query group
-    await queryGroup.update(model.uuid, file);
-    const items = queryGroup.items;
-    console.log("Query Results:", items);
+  // Add property rule if property input has a value
+  if (propertyInput.value) {
+    const propertyRule: OBC.IfcPropertyRule = {
+      type: "property",
+      name: /.*/, // Match any property name
+      value: new RegExp(propertyInput.value, "i"),
+    };
+    queryGroup.add(new OBC.IfcBasicQuery(components, {
+      name: "property",
+      inclusive: false,
+      rules: [propertyRule],
+    }));
+    console.log(`Property Rule Applied (Step ${currentStep + 1}):`, propertyRule);
+  }
 
-    if (Object.keys(items).length === 0) {
-      alert("No elements found");
-      hider.set(false);
-      return;
-    }
+  // Update the query group
+  await queryGroup.update(model.uuid, file);
+  const items = queryGroup.items;
+  console.log(`Query Results (Step ${currentStep + 1}):`, items);
 
-    // Hide all elements and show only the filtered ones
+  if (Object.keys(items).length === 0) {
+    alert(`No elements found for Step ${currentStep + 1}`);
     hider.set(false);
-    console.log("All elements arre visible");
+    return;
+  }
 
-    hider.set(true, items);
-    console.log("Filtered elements are visible", items);
-  };
+  // Hide all elements and show only the filtered ones
+  hider.set(false);
+  console.log("All elements are visible");
 
-  updateFinderButton.addEventListener("click", async () => {
-    await updateFinder();
-  });
+  hider.set(true, items);
+  console.log(`Filtered elements are visible for Step ${currentStep + 1}`, items);
 
-  hider.set(true);
-};
+  // Move to the next step
+  currentStep++;
+  if (currentStep >= 5) {
+    alert("All filter steps applied.");
+    currentStep = 0;
+  }
+}
 
-fragments.onFragmentsLoaded.add((model) => {
-  console.log(model);
-});
+/**
+ * Resets the view to show the entire model.
+ */
+function resetView() {
+  if (!model) {
+    console.error("No model loaded.");
+    return;
+  }
+
+  // Reset the camera to fit the entire model
+  const box = new THREE.Box3().setFromObject(world.scene.three);
+  console.log("Bounding Box:", box);
+  world.camera.controls.fitToBox(box, true);
+
+  // Reset visibility of all elements
+  hider.set(false);
+  console.log("All elements are visible.");
+
+  // Clear the category and property input fields
+  const categoryInput = document.getElementById("category-input") as BUI.TextInput;
+  const propertyInput = document.getElementById("property-input") as BUI.TextInput;
+
+  if (categoryInput && propertyInput) {
+    categoryInput.value = "";
+    propertyInput.value = "";
+  }
+
+  // Clear the query rules
+  queryGroup.clear();
+  console.log("Query rules cleared.");
+
+  console.log("View reset to show the entire model.");
+}
+
+// -------------------------
+// Event Listeners
+// -------------------------
 
 // Setup file input and button
 const fileInput = document.getElementById("file-input") as HTMLInputElement;
@@ -172,11 +218,22 @@ loadIfcButton.addEventListener("click", () => {
 fileInput.addEventListener("change", async (event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
-    await loadIfcFromFile(input.files[0]);
+    file = input.files[0];
+    await loadIfcFromFile(file);
   }
 });
 
-//Properties table setup
+// Event listener for the Next button
+const nextButton = document.getElementById("next-button") as HTMLButtonElement;
+nextButton.addEventListener("click", applyFilterStep);
+
+// Reset View Button
+const resetViewButton = document.getElementById("reset-view-button") as HTMLButtonElement;
+resetViewButton?.addEventListener("click", resetView);
+
+// -------------------------
+// Properties Table Setup
+// -------------------------
 const propertiesTable = document.getElementById("properties-table");
 const [table, updateTable] = CUI.tables.elementProperties({
   components,
@@ -194,40 +251,4 @@ highlighter.events.select.onHighlight.add((fragmentIdMap) => {
 
 highlighter.events.select.onClear.add(() => {
   updateTable({ fragmentIdMap: {} });
-});
-
-// Reset View Button
-const resetViewButton = document.getElementById("reset-view-button") as HTMLButtonElement;
-
-if (!resetViewButton) {
-  throw new Error("Reset View Button not found!");
-}
-
-resetViewButton.addEventListener("click", () => {
-  // Reset the camera to fit the entire model
-  const box = new THREE.Box3().setFromObject(world.scene.three);
-  console.log("Bounding Box:", box);
-  world.camera.controls.fitToBox(box, true);
-
-  // Reset visibility of all elements (if a hider is being used)
-  const hider = components.get(OBC.Hider);
-  hider.set(false); // Show all elements
-  console.log("All elements are visible.");
-
-  // Clear the category and property input fields
-  const categoryInput = document.getElementById("category-input") as BUI.TextInput;
-  const propertyInput = document.getElementById("property-input") as BUI.TextInput;
-
-  if (categoryInput && propertyInput) {
-    categoryInput.value = "";
-    propertyInput.value = "";
-  }
-
-  // Clear the query rules
-  const finder = components.get(OBC.IfcFinder);
-  const queryGroup = finder.create();
-  queryGroup.clear(); // Clear all query rules
-  console.log("Query rules cleared.");
-
-  console.log("View reset to show the entire model.");
 });
