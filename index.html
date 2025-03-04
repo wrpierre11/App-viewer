@@ -12,36 +12,45 @@
       <div class="properties-panel">
         <bim-panel label="Properties">
           <bim-panel-section label="Element Data">
-            <div class="button-group">
-              <bim-button id="expand-button">Expand</bim-button>
-            </div>
             <div id="properties-table"></div>
           </bim-panel-section>
         </bim-panel>    
       </div>
 
       <!-- 3D View Container -->
-      <div id="container"></div>
-
-      <!-- Load IFC Button -->
-       <div class="button-container">
-        <button id="load-ifc-button">Load IFC</button>
-        <button id="reset-view-button">Reset View</button>
-        <input type="file" id="file-input" accept=".ifc" style="display: none;">
-       </div>
+      <div id="container" style="grid-area: viewport;"></div>
 
       <!-- IFC Finder Section -->
       <div class="finder-panel">
         <bim-panel active label="IFC Filter" class="options-menu">
-          <bim-panel-section collapsed label="Controls">
+          <bim-panel-section label="Elements">
             <bim-panel-section class="finder-controls">
-              <bim-text-input id="category-input" label="Category" value=""></bim-text-input>
-              <bim-text-input id="property-input" label="Property" value=""></bim-text-input>
-              <bim-button id="update-finder-button" label="Update" class="update-button"></bim-button>
+              <!-- Category Inputs -->
+              <bim-text-input id="category-input-1" label="Category 1"></bim-text-input>
+              <bim-text-input id="property-input-1" label="Property 1"></bim-text-input>
+              <bim-text-input id="category-input-2" label="Category 2"></bim-text-input>
+              <bim-text-input id="property-input-2" label="Property 2"></bim-text-input>
+              <bim-text-input id="category-input-3" label="Category 3"></bim-text-input>
+              <bim-text-input id="property-input-3" label="Property 3"></bim-text-input>
+              <bim-text-input id="category-input-4" label="Category 4"></bim-text-input>
+              <bim-text-input id="property-input-4" label="Property 4"></bim-text-input>
+              <bim-text-input id="category-input-5" label="Category 5"></bim-text-input>
+              <bim-text-input id="property-input-5" label="Property 5"></bim-text-input>
+
+              <!-- Next Button -->
+              <button id="next-button" class="update-button">Next</button>
             </bim-panel-section>
           </bim-panel-section>      
         </bim-panel>
-      </div>      
+      </div>
+
+      <!-- Load IFC and Resert Buttons -->
+      <div class="button-container">
+        <button id="load-ifc-button">Load IFC</button>
+        <button id="reset-view-button">Reset View</button>
+        <input type="file" id="file-input" accept=".ifc" style="display: none;">
+      </div>
+      
     </div>
     
     <script type="module" src="src/main.ts"></script>
