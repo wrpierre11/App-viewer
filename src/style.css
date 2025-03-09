@@ -42,12 +42,12 @@ body, html {
 .finder-panel {
     grid-area: finder-panel;
     background-color: #f5f5f5;
-    overflow-y: auto; /* Allow scrolling if content overflows */
+    overflow-y: auto;
     padding: 1rem;
-    border-left: 1px solid #ddd; /* Optional: Add a border to separate the section */
-    height: auto; /* Leave space for the button container */
-    position: sticky; /* Fix the panel in place */
-    top: 0; /* Stick to the top of the viewport */
+    border-left: 1px solid #ddd;
+    height: auto;
+    position: sticky;
+    top: 0;
 }
 
 /* General styles for the IFC Finder Section */
@@ -63,30 +63,14 @@ body, html {
 .finder-controls {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem; /* Spacing between inputs and button */
+    gap: 1rem; /* Increased spacing for better readability */
     padding-top: 10px;
 }
 
 /* Styles for the text inputs */
 bim-text-input {
     width: 100%;
-    margin-bottom: 0.5rem; /* Spacing between inputs */
-}
-
-/* Next Button */
-#next-button {
-    background-color: #28a745; /* Green color for Next button */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-top: 1rem; /* Spacing above the button */
-}
-  
-#next-button:hover {
-    background-color: #218838; /* Darker green on hover */
+    margin-bottom: 0.5rem;
 }
 
 /* ------------------------- */
@@ -96,12 +80,12 @@ bim-text-input {
     grid-area: button-container;
     display: flex;
     justify-content: center;
-    gap: 1rem; /* Spacing between buttons */
-    padding: 1rem;
+    gap: 1rem;
+    padding: 0.5rem; /* Reduced padding */
     background-color: #e0e0e0;
-    z-index: 1; /* Ensure buttons are above other elements */
-    height: 2rem; /* Fixed height for the button container */
-    align-items: center; /* Center buttons vertically */
+    z-index: 1;
+    height: auto; /* Allow height to adjust based on content */
+    align-items: center;
 }
 
 /* Load IFC Button */
@@ -109,7 +93,7 @@ bim-text-input {
     padding: 0.5rem 1rem;
     font-size: 1rem;
     cursor: pointer;
-    background-color: #007bff; /* Blue color for Load IFC */
+    background-color: #007bff;
     color: white;
     border: none;
     border-radius: 4px;
@@ -117,33 +101,32 @@ bim-text-input {
 }
 
 #load-ifc-button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+    background-color: #0056b3;
 }
 
-/* Reset View Button */
-#reset-view-button {
+/* Update Button */
+#update-button {
     padding: 0.5rem 1rem;
     font-size: 1rem;
     cursor: pointer;
-    background-color: #dc3545; /* Red color for Reset View */
+    background-color: #28a745;
     color: white;
     border: none;
     border-radius: 4px;
     transition: background-color 0.3s ease;
 }
 
-#reset-view-button:hover {
-    background-color: #c82333; /* Darker red on hover */
+#update-button:hover {
+    background-color: #218838;
 }
 
 /* ------------------------- */
 /* Responsive Styles */
 /* ------------------------- */
 @media (max-width: 768px) {
-    /* Adjust grid layout for smaller screens */
     .app {
-        grid-template-columns: 1fr; /* Single column layout */
-        grid-template-rows: auto 1fr auto auto; /* Reorder rows for better flow */
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto auto;
         grid-template-areas:
             "properties-panel"
             "viewport"
@@ -151,39 +134,33 @@ bim-text-input {
             "button-container";
     }
 
-    /* Adjust finder panel for smaller screens */
     .finder-panel {
-        height: auto; /* Allow height to adjust based on content */
-        position: static; /* Remove sticky behavior on small screens */
+        height: auto;
+        position: static;
     }
 
-    /* Adjust button container for smaller screens */
     .button-container {
-       flex-direction: column; /* Stack buttons vertically */
-       gap: 0.5rem; /* Reduce spacing between buttons */
-       height: auto; /* Allow height to adjust based on content */
-       padding: 0.5rem; /* Reduce padding */
+       flex-direction: column;
+       gap: 0.5rem;
+       height: auto;
+       padding: 0.5rem;
     }
 
     #container {
-        min-height: 300px; /* Ensure 3D view is visible on small screens */
+        min-height: 300px;
     }
 
-    /* Adjust finder controls for smaller screens */
     .finder-controls {
-        gap: 8px; /* Reduce spacing between controls */
+        gap: 0.5rem;
     }
 
-    /* Adjust options menu for smaller screens */
     .options-menu {
         padding: 8px;
         margin: 8px 0;
     }
 
-    /* Make buttons full width on smaller screens */
     #load-ifc-button,
-    #reset-view-button,
-    #next-button {
+    #update-button {
         width: 100%;
     }
 }
