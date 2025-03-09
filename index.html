@@ -25,29 +25,20 @@
         <bim-panel active label="IFC Filter" class="options-menu">
           <bim-panel-section label="Elements">
             <bim-panel-section class="finder-controls">
-              <!-- Category Inputs -->
-              <bim-text-input id="category-input-1" label="Category 1"></bim-text-input>
-              <bim-text-input id="property-input-1" label="Property 1"></bim-text-input>
-              <bim-text-input id="category-input-2" label="Category 2"></bim-text-input>
-              <bim-text-input id="property-input-2" label="Property 2"></bim-text-input>
-              <bim-text-input id="category-input-3" label="Category 3"></bim-text-input>
-              <bim-text-input id="property-input-3" label="Property 3"></bim-text-input>
-              <bim-text-input id="category-input-4" label="Category 4"></bim-text-input>
-              <bim-text-input id="property-input-4" label="Property 4"></bim-text-input>
-              <bim-text-input id="category-input-5" label="Category 5"></bim-text-input>
-              <bim-text-input id="property-input-5" label="Property 5"></bim-text-input>
+              <!-- Single Category and Property Inputs -->
+              <bim-text-input id="category-input" label="Category"></bim-text-input>
+              <bim-text-input id="property-input" label="Property"></bim-text-input>
 
-              <!-- Next Button -->
-              <button id="next-button" class="update-button">Next</button>
+              <!-- Update Button -->
+              <button id="update-button" class="update-button">Update</button>
             </bim-panel-section>
           </bim-panel-section>      
         </bim-panel>
       </div>
 
-      <!-- Load IFC and Resert Buttons -->
+      <!-- Load IFC Button -->
       <div class="button-container">
         <button id="load-ifc-button">Load IFC</button>
-        <button id="reset-view-button">Reset View</button>
         <input type="file" id="file-input" accept=".ifc" style="display: none;">
       </div>
       
