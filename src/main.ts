@@ -92,9 +92,6 @@ async function loadIfcFromFile(file: File) {
   if (properties) {
     console.log("Properties of the loaded IFC file", properties);
   }
-
-  // Perform the finder functionality
-  await findElementsInModel(model, file);
 };
 
 // ======================
