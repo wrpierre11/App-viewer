@@ -5,12 +5,22 @@ import * as BUI from "@thatopen/ui"
 import * as CUI from "@thatopen/ui-obc";
 import { StatsModule } from "./StatsModule";
 
+// ======================
+// 1. INITIALIZATION
+// ======================
+
+// Initialize UI Manager
 BUI.Manager.init();
 
+// Get the container element
 const container = document.getElementById("container");
 if (!container) {
   throw new Error("Container element not found");
 }
+
+// ======================
+// 2. WORLD SETUP
+// ======================
 
 // Initialize components and create world
 const components = new OBC.Components();
@@ -35,32 +45,41 @@ world.camera.controls.setLookAt(0, 1, 0, 0, 0, 0);
 const box = new THREE.Box3(new THREE.Vector3(-15, -15, -15), new THREE.Vector3(15, 15, 15));
 world.camera.controls.fitToBox(box, false);
 
-//Camera, renderer setup and background color
+// Set up scene background color
 world.scene.setup();
 world.scene.three.background = new THREE.Color(0x000000);
 
 //Add a grid, axes and stats
 const grids = components.get(OBC.Grids);
 grids.create(world);
-const axes = new THREE.AxesHelper(5);
-world.scene.three.add(axes);
 const statsModule = new StatsModule();
 statsModule.attachToRenderer(world.renderer);
 
-// Getting IFC model a fragments
+// ======================
+// 4. IFC LOADER SETUP
+// ======================
+
+// Initialize fragments and IFC loader
 const fragments = components.get(OBC.FragmentsManager);
 const fragmentIfcLoader = components.get(OBC.IfcLoader);
 await fragmentIfcLoader.setup();
 
 fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 
-//Load IFC file
+// ======================
+// 5. LOAD IFC FILE FUNCTION
+// ======================
+
+let loadedModel: THREE.Object3D | null = null;
+
 async function loadIfcFromFile(file: File) {
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const model = await fragmentIfcLoader.load(buffer);
   model.name = file.name;
   world.scene.three.add(model);
+
+  loadedModel = model;
 
   // Process the model to index relationships
   const indexer = components.get(OBC.IfcRelationsIndexer);
@@ -71,97 +90,87 @@ async function loadIfcFromFile(file: File) {
   const properties = group.getLocalProperties();
 
   if (properties) {
-    console.log("Properties of the loaded IFC file", properties)};
+    console.log("Properties of the loaded IFC file", properties);
+  }
 
-  // Use the IfcFinder to query specific elements
+  // Perform the finder functionality
+  await findElementsInModel(model, file);
+};
+
+// ======================
+// 6. FINDER FUNCTION
+// ======================
+
+async function findElementsInModel(model: THREE.Object3D, file: File, category: string, property: string) {
   const finder = components.get(OBC.IfcFinder);
   const queryGroup = finder.create();
 
-  //Basic query by category
+  // Create a query to find elements by category
   const basicQuery = new OBC.IfcBasicQuery(components, {
     name: "category",
     inclusive: false,
     rules: [],
   });
-
   queryGroup.add(basicQuery);
-    
-  // Basic query by property
-  const propertyQuery = new OBC.IfcBasicQuery(components, {
+
+  // Rule for query by category
+  const categoryRule: OBC.IfcCategoryRule = {
+    type: "category",
+    value: new RegExp(category, "i"),
+  };
+  basicQuery.rules.push(categoryRule);
+
+  // Property query
+  const propertyRule: OBC.IfcPropertyRule = {
+    type: "property",
+    name: /.*/,
+    value: new RegExp(property, "i"),
+  };
+  const propertyQuery = new OBC.IfcPropertyQuery(components, {
     name: "property",
     inclusive: false,
-    rules: [],
+    rules: [propertyRule],
   });
-
   queryGroup.add(propertyQuery);
 
+  // Perform the query
+  await queryGroup.update(model.uuid, file);
+  const items = queryGroup.items;
+
+  // Hide all elements and show only the queried ones
   const hider = components.get(OBC.Hider);
-  
-  // Buttons section to the finder
-  const categoryInput = document.getElementById("category-input") as BUI.TextInput;
-  const propertyInput = document.getElementById("property-input") as BUI.TextInput;
-  const updateFinderButton = document.getElementById("update-button") as BUI.Button;
-
-  if (!categoryInput || !propertyInput || !updateFinderButton) {
-    throw new Error("Input elements not found");
-  }
-
-  const updateFinder = async () => {
-    // Clear previous rules
-    basicQuery.clear();
-    propertyQuery.clear();
-
-    // Add new rules only if inputs are not empty
-    if (categoryInput.value) {
-      const categoryRule: OBC.IfcCategoryRule = {
-        type: "category",
-        value: new RegExp(categoryInput.value, "i"),
-      };
-      basicQuery.rules.push(categoryRule);
-      console.log("Category Rule Applied:", categoryRule);
-    }
-
-    if (propertyInput.value) {
-      const propertyRule: OBC.IfcPropertyRule = {
-        type: "property",
-        name: /.*/,
-        value: new RegExp(propertyInput.value, "i"),
-      };
-      propertyQuery.rules.push(propertyRule);
-      console.log("Property Rule Applied:", propertyRule);
-    }
-
-    // Update the query group
-    await queryGroup.update(model.uuid, file);
-    const items = queryGroup.items;
-    console.log("Query Results:", items);
-
-    if (Object.keys(items).length === 0) {
-      alert("No elements found");
-      hider.set(false);
-      return;
-    }
-
-    // Hide all elements and show only the filtered ones
-    hider.set(false);
-    console.log("All elements arre visible");
-
-    hider.set(true, items);
-    console.log("Filtered elements are visible", items);
-  };
-
-  updateFinderButton.addEventListener("click", async () => {
-    await updateFinder();
-  });
-
-  hider.set(true);
+  hider.set(false);
+  hider.set(true, items);
 };
 
-fragments.onFragmentsLoaded.add((model) => {
-  console.log(model);
+// ======================
+// 7. PROPERTIES TABLE SETUP
+// ======================
+
+const propertiesTable = document.getElementById("properties-table");
+const [table, updateTable] = CUI.tables.elementProperties({
+  components,
+  fragmentIdMap: {},
+});
+propertiesTable?.appendChild(table);
+
+// ======================
+// 8. HIGHLIGHTER SETUP
+// ======================
+
+const highlighter = components.get(OBF.Highlighter);
+highlighter.setup({ world });
+highlighter.events.select.onHighlight.add((fragmentIdMap) => {
+  updateTable({ fragmentIdMap });
+});
+highlighter.events.select.onClear.add(() => {
+  updateTable({ fragmentIdMap: {} });
 });
 
-// Setup file input and button
+// ======================
+// 9. FILE INPUT AND BUTTON SETUP
+// ======================
+
 const fileInput = document.getElementById("file-input") as HTMLInputElement;
 const loadIfcButton = document.getElementById("load-ifc-button") as HTMLButtonElement;
 
@@ -176,22 +185,29 @@ fileInput.addEventListener("change", async (event) => {
   }
 });
 
-//Properties table setup
-const propertiesTable = document.getElementById("properties-table");
-const [table, updateTable] = CUI.tables.elementProperties({
-  components,
-  fragmentIdMap: {},
-});
+// ======================
+// 10. UPDATE BUTTON SETUP
+// ======================
 
-propertiesTable?.appendChild(table);
+const updateButton = document.getElementById("update-button") as HTMLButtonElement;
+const categoryInput = document.getElementById("category-input") as HTMLInputElement;
+const propertyInput = document.getElementById("property-input") as HTMLInputElement;
 
-const highlighter = components.get(OBF.Highlighter);
-highlighter.setup({ world });
+updateButton.addEventListener("click", async () => {
+  if (!loadedModel) {
+    console.warn("No IFC model is loaded yet.");
+    return;
+  }
 
-highlighter.events.select.onHighlight.add((fragmentIdMap) => {
-  updateTable({ fragmentIdMap });
-});
+  // Get user inputs for category and property
+  const category = categoryInput.value.trim();
+  const property = propertyInput.value.trim();
 
-highlighter.events.select.onClear.add(() => {
-  updateTable({ fragmentIdMap: {} });
+  if (!category || !property) {
+    console.warn("Please provide both Category and Property values.");
+    return;
+  }
+
+  // Perform the finder functionality with user inputs
+  await findElementsInModel(loadedModel, fileInput.files![0], category, property);
 });
