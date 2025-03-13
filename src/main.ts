@@ -56,7 +56,7 @@ const statsModule = new StatsModule();
 statsModule.attachToRenderer(world.renderer);
 
 // ======================
-// 4. IFC LOADER SETUP
+// 3. IFC LOADER SETUP
 // ======================
 
 // Initialize fragments and IFC loader
@@ -67,7 +67,7 @@ await fragmentIfcLoader.setup();
 fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 
 // ======================
-// 5. LOAD IFC FILE FUNCTION
+// 4. LOAD IFC FILE FUNCTION
 // ======================
 
 let loadedModel: THREE.Object3D | null = null;
@@ -95,7 +95,7 @@ async function loadIfcFromFile(file: File) {
 };
 
 // ======================
-// 6. FINDER FUNCTION
+// 5. FINDER FUNCTION
 // ======================
 
 async function findElementsInModel(model: THREE.Object3D, file: File, category: string, property: string) {
@@ -141,7 +141,7 @@ async function findElementsInModel(model: THREE.Object3D, file: File, category: 
 };
 
 // ======================
-// 7. PROPERTIES TABLE SETUP
+// 6. PROPERTIES TABLE SETUP
 // ======================
 
 const propertiesTable = document.getElementById("properties-table");
@@ -152,7 +152,7 @@ const [table, updateTable] = CUI.tables.elementProperties({
 propertiesTable?.appendChild(table);
 
 // ======================
-// 8. HIGHLIGHTER SETUP
+// 7. HIGHLIGHTER SETUP
 // ======================
 
 const highlighter = components.get(OBF.Highlighter);
@@ -165,7 +165,7 @@ highlighter.events.select.onClear.add(() => {
 });
 
 // ======================
-// 9. FILE INPUT AND BUTTON SETUP
+// 8. FILE INPUT AND BUTTON SETUP
 // ======================
 
 const fileInput = document.getElementById("file-input") as HTMLInputElement;
@@ -183,7 +183,7 @@ fileInput.addEventListener("change", async (event) => {
 });
 
 // ======================
-// 10. UPDATE BUTTON SETUP
+// 9. UPDATE BUTTON SETUP
 // ======================
 
 const updateButton = document.getElementById("update-button") as HTMLButtonElement;
@@ -208,3 +208,83 @@ updateButton.addEventListener("click", async () => {
   // Perform the finder functionality with user inputs
   await findElementsInModel(loadedModel, fileInput.files![0], category, property);
 });
+
+// ======================
+// 10. SEQUENTIAL FILTERING SETUP
+// ======================
+
+// Store filters in an array
+const filters: { category: string; property: string }[] = [];
+let currentFilterIndex = -1; // Tracks the currently applied filter
+
+// Get references to the new buttons
+const addFilterButton = document.getElementById("add-filter-button") as HTMLButtonElement;
+const previousButton = document.getElementById("previous-button") as HTMLButtonElement;
+const nextButton = document.getElementById("next-button") as HTMLButtonElement;
+
+// Add Filter Button: Add a new filter to the list
+addFilterButton.addEventListener("click", () => {
+  const category = categoryInput.value.trim();
+  const property = propertyInput.value.trim();
+
+  if (!category || !property) {
+    console.warn("Please provide both Category and Property values.");
+    return;
+  }
+
+  // Add the filter to the list
+  filters.push({ category, property });
+  console.log("Filter added:", { category, property });
+
+  // Clear the input fields
+  categoryInput.value = "";
+  propertyInput.value = "";
+
+  // If this is the first filter, apply it immediately
+  if (filters.length === 1) {
+    currentFilterIndex = 0;
+    applyFilter(filters[currentFilterIndex]);
+  }
+});
+
+// Previous Button: Go to the previous filter
+previousButton.addEventListener("click", () => {
+  if (filters.length === 0) {
+    console.warn("No filters available.");
+    return;
+  }
+
+  // Move to the previous filter
+  currentFilterIndex = (currentFilterIndex - 1 + filters.length) % filters.length;
+  applyFilter(filters[currentFilterIndex]);
+});
+
+// Next Button: Go to the next filter
+nextButton.addEventListener("click", () => {
+  if (filters.length === 0) {
+    console.warn("No filters available.");
+    return;
+  }
+
+  // Move to the next filter
+  currentFilterIndex = (currentFilterIndex + 1) % filters.length;
+  applyFilter(filters[currentFilterIndex]);
+});
+
+// Function to apply a filter
+async function applyFilter(filter: { category: string; property: string }) {
+  if (!loadedModel) {
+    console.warn("No IFC model is loaded yet.");
+    return;
+  }
+
+  // Reset the model to its original state
+  const hider = components.get(OBC.Hider);
+  hider.set(false); // Show all elements
+
+  // Apply the new filter
+  await findElementsInModel(loadedModel, fileInput.files![0], filter.category, filter.property);
+
+  // Log the current filter
+  console.log("Applied filter:", filter);
+}
