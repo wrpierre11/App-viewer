@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import * as OBF from "@thatopen/components-front";
-import * as BUI from "@thatopen/ui"
+import * as BUI from "@thatopen/ui";
 import * as CUI from "@thatopen/ui-obc";
 import { StatsModule } from "./StatsModule";
 
@@ -38,9 +38,10 @@ world.camera = new OBC.OrthoPerspectiveCamera(components);
 components.init();
 
 // Set the camera to orthographic and Fit the camera to the box
-world.camera.projection.set("Orthographic");
-world.camera.set("Plan");
-world.camera.controls.setLookAt(0, 1, 0, 0, 0, 0);
+//world.camera.projection.set("Orthographic");
+//world.camera.set("Plan");
+world.camera.controls.setLookAt(20, 8, 10, 0, 0, 0);
+//world.camera.controls.setLookAt(0, 10, 0, 0, 0, 0);
 
 const box = new THREE.Box3(new THREE.Vector3(-15, -15, -15), new THREE.Vector3(15, 15, 15));
 world.camera.controls.fitToBox(box, false);
@@ -123,6 +124,7 @@ async function findElementsInModel(model: THREE.Object3D, file: File, category: 
     name: /.*/,
     value: new RegExp(property, "i"),
   };
+
   const propertyQuery = new OBC.IfcPropertyQuery(components, {
     name: "property",
     inclusive: false,
@@ -192,6 +194,7 @@ const propertyInput = document.getElementById("property-input") as HTMLInputElem
 
 updateButton.addEventListener("click", async () => {
   if (!loadedModel) {
+ 
     console.warn("No IFC model is loaded yet.");
     return;
   }
@@ -253,7 +256,6 @@ previousButton.addEventListener("click", () => {
     console.warn("No filters available.");
     return;
   }
-
   // Move to the previous filter
   currentFilterIndex = (currentFilterIndex - 1 + filters.length) % filters.length;
   applyFilter(filters[currentFilterIndex]);
@@ -265,11 +267,12 @@ nextButton.addEventListener("click", () => {
     console.warn("No filters available.");
     return;
   }
-
   // Move to the next filter
   currentFilterIndex = (currentFilterIndex + 1) % filters.length;
   applyFilter(filters[currentFilterIndex]);
 });
+
+const currentFilterDisplay = document.getElementById("current-filter-display") as HTMLDivElement;
 
 // Function to apply a filter
 async function applyFilter(filter: { category: string; property: string }) {
@@ -285,6 +288,9 @@ async function applyFilter(filter: { category: string; property: string }) {
   // Apply the new filter
   await findElementsInModel(loadedModel, fileInput.files![0], filter.category, filter.property);
 
+  // Update the current filter display
+  currentFilterDisplay.textContent = `Filter ${currentFilterIndex + 1} of ${filters.length}: ${filter.category} / ${filter.property}`;
+  
   // Log the current filter
   console.log("Applied filter:", filter);
-}
+};
