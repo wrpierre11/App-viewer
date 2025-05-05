@@ -88,6 +88,12 @@ bim-text-input {
     align-items: center;
 }
 
+#current-filter-display {
+    color: #333;
+    font-weight: bold;
+}
+
+
 /* Load IFC Button */
 #load-ifc-button {
     padding: 0.5rem 1rem;
@@ -140,7 +146,6 @@ bim-text-input {
 #next-button:hover {
   background-color: #0056b3;
 }
-
 /* ------------------------- */
 /* Responsive Styles */
 /* ------------------------- */
